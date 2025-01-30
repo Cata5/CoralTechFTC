@@ -6,7 +6,6 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -17,38 +16,23 @@ public class another_test extends OpMode {
     // Mecanum drive motors
     private Servo gheara;
     private Servo pozitionare;
-    private Servo rotireR;
-    private Servo rotireL;
     private boolean isClawOpen = true;
     private boolean previousA = false;
     private DcMotorEx armMotor;
     private DcMotorEx elbowMotor;
-    private double delayTranzitie = 2.0;
-
-    private int armTargetPosition;
-    private int elbowTargetPosition;
-
-    private int armCheckPos;
-    private int elbowCheckPos;
-    private boolean check;
-    private boolean check1 = true;
     private double wrist2Angle = 134;
     private DcMotor frontLeftMotor;
     private DcMotor frontRightMotor;
     private DcMotor backLeftMotor;
     private DcMotor backRightMotor;
-    private int valoare = 0;
-
     private boolean isSlowMode = false;
-    private boolean previousY = false;
     private boolean previousX2 = false;
     private boolean previousB2 = false;
     private PIDController controller1;
     private PIDController controller2;
     public static int target = 0;
     public static int target2 = 0;
-    private final double ticks_in_degrees = 1440 / 80;
-    public static double p1 = 0.029, i1 = 0.0013, d1 = 0.0045; // 0.04 0.015 0.005
+    public static double p1 = 0.029, i1 = 0.0013, d1 = 0.0045;
     public static double f1 = 0.1;
     public static double p2 = 0.04, i2 = 0.03, d2 = 0.0011;
     public static double f2 = 0.16;
@@ -75,10 +59,10 @@ public class another_test extends OpMode {
         gheara = hardwareMap.get(Servo.class, "wrist1");
         gheara.setPosition(degreesToServoPosition(63));
         pozitionare = hardwareMap.get(Servo.class, "wrist2");
-        pozitionare.setPosition((degreesToServoPositionPro(132)));
-        rotireR = hardwareMap.get(Servo.class, "rotareR");
+        pozitionare.setPosition(degreesToServoPositionPro(132));
+        Servo rotireR = hardwareMap.get(Servo.class, "rotareR");
         rotireR.setPosition(degreesToServoPositionPro(120));
-        rotireL = hardwareMap.get(Servo.class, "rotareL");
+        Servo rotireL = hardwareMap.get(Servo.class, "rotareL");
         rotireL.setPosition(degreesToServoPositionPro(-120));
         armMotor = hardwareMap.get(DcMotorEx.class, "armMotor");
         elbowMotor = hardwareMap.get(DcMotorEx.class, "elbowMotor");
@@ -106,6 +90,7 @@ public class another_test extends OpMode {
         int elbowPos = elbowMotor.getCurrentPosition();
 
         double pid = controller1.calculate(elbowPos, target);
+        double ticks_in_degrees = 1440.0 / 80.0;
         double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * f1;
 
         double power = pid + ff;
@@ -170,11 +155,7 @@ public class another_test extends OpMode {
             isTransitioning = true;
         }
 
-        if (isTransitioning) {
-            isSlowMode = true;
-        } else {
-            isSlowMode = false;
-        }
+        isSlowMode = isTransitioning;
 
         if (gamepad1.right_trigger > 0.2) {
             target = target + 7;
@@ -182,9 +163,7 @@ public class another_test extends OpMode {
         if (gamepad1.left_trigger > 0.2) {
             target = target - 5;
         }
-        elbowCheckPos = elbowMotor.getCurrentPosition();
         elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armCheckPos = armMotor.getCurrentPosition();
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         if (gamepad2.right_bumper && !previousX2) {
@@ -197,13 +176,13 @@ public class another_test extends OpMode {
         if (gamepad2.left_bumper && !previousB2) {
             wrist2Angle -= 30.0;
             if (wrist2Angle < 0) wrist2Angle = 0;
-            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
+            pozitionare.setPosition(degreesToServoPositionPro(wrist2Angle));
         }
         previousB2 = gamepad2.left_bumper;
 
         if (gamepad2.b) {
             wrist2Angle = 132.0;
-            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
+            pozitionare.setPosition(degreesToServoPositionPro(wrist2Angle));
         }
 
         if (gamepad1.a && !previousA) {
@@ -225,10 +204,6 @@ public class another_test extends OpMode {
         telemetry.addData("isTransitioning", isTransitioning);
         telemetry.addData("putere", speedMultiplier);
         telemetry.update();
-    }
-
-    private boolean check(int currentPos, int targetPos) {
-        return currentPos > targetPos;
     }
 
     private double degreesToServoPosition(double degrees) {
