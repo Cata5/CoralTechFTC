@@ -52,7 +52,7 @@ public class another_test extends OpMode {
     public static double f1 = 0.1;
     public static double p2 = 0.04, i2 = 0.03, d2 = 0.0011;
     public static double f2 = 0.16;
-    public boolean pula = false;
+    public boolean isTransitioning = false;
 
     @Override
     public void init() {
@@ -87,8 +87,8 @@ public class another_test extends OpMode {
 
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         elbowMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        elbowMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODERS);
-        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODERS);
+        elbowMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         armMotor.setTargetPosition(0);
         elbowMotor.setTargetPosition(0);
@@ -108,12 +108,12 @@ public class another_test extends OpMode {
         double pid = controller1.calculate(elbowPos, target);
         double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * f1;
 
-        double power = pid * ff;
+        double power = pid + ff;
 
         double pid2 = controller2.calculate(armPos, target2);
         double ff2 = Math.cos(Math.toRadians(target2 / ticks_in_degrees)) * f2;
 
-        double power2 = pid2 * ff2;
+        double power2 = pid2 + ff2;
 
         elbowMotor.setPower(power);
         armMotor.setPower(power2);
@@ -139,21 +139,21 @@ public class another_test extends OpMode {
         if (gamepad2.dpad_down) {
             target2 = 0;
             target = 460;
-            pula = true;
+            isTransitioning = true;
         }
         if (gamepad2.dpad_up) {
             target = 640;
             target2 = 1500;
-            pula = true;
+            isTransitioning = true;
             pozitionare.setPosition(degreesToServoPositionPro(222));
         }
         if (gamepad2.dpad_right) {
             target = 485;
             target2 = 950;
-            pula = true;
+            isTransitioning = true;
         }
         if (gamepad2.a) {
-            pula = false;
+            isTransitioning = false;
             double elbowError = Math.abs(elbowMotor.getCurrentPosition() - target);
             double armError = Math.abs(armMotor.getCurrentPosition() - target2);
 
@@ -166,14 +166,11 @@ public class another_test extends OpMode {
             target = 0;
             target2 = 0;
             pozitionare.setPosition(degreesToServoPositionPro(132));
-        }
-        if (gamepad2.a) {
-            pula = false;
         } else if (gamepad2.left_bumper || gamepad2.right_bumper || gamepad2.dpad_up || gamepad2.dpad_down || gamepad2.dpad_left || gamepad2.dpad_right || gamepad2.b || gamepad2.x || gamepad2.y) {
-            pula = true;
+            isTransitioning = true;
         }
 
-        if (pula) {
+        if (isTransitioning) {
             isSlowMode = true;
         } else {
             isSlowMode = false;
@@ -225,7 +222,7 @@ public class another_test extends OpMode {
         telemetry.addData("target", target2);
         telemetry.addData("posElbow", elbowMotor.getCurrentPosition());
         telemetry.addData("target2", target);
-        telemetry.addData("pula", pula);
+        telemetry.addData("isTransitioning", isTransitioning);
         telemetry.addData("putere", speedMultiplier);
         telemetry.update();
     }
