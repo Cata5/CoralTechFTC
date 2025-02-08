@@ -1,114 +1,178 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.arcrobotics.ftclib.controller.PIDController;
+import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name = "TELEBELEAUA", group = "Robo")
+@Config
+@TeleOp(name = "TELEBELEAUAAAAA", group = "FINAL")
 public class TELEBELEAUA extends OpMode {
-    // Mecanum drive motors
-    private Servo gheara;
-    private Servo pozitionare;
-    private boolean isClawOpen = false;
-    private boolean previousA = false;
-    private DcMotor armMotor;
-    private DcMotor elbowMotor;
-    private double delayTranzitie = 2.0;
+    private DcMotorEx motorGlisiere;
+    private DcMotorEx motorBratStanga, motorBratDreapta;
+    private Servo gheara, pozitionare_gheara;
+    private PIDController controller_unghi, controler_glisiere;
 
-    private int armTargetPosition;
-    private int elbowTargetPosition;
-
-    //    private int armTicksPerDegree;
-//    private int elbowTicksPerDegree;
-    private int armCheckPos;
-    private int elbowCheckPos;
-    private boolean check;
-    private boolean check1 = true;
+    private final int GLISIERE_LIMIT_MIN = 0;
+    private final int GLISIERE_LIMIT_MAX = 3000;
     private double wrist2Angle = 134;
+    private boolean previousX2 = false;
+    private boolean previousB2 = false;
+    private final int BRAT_LIMIT_MIN = 0;
+    private final int BRAT_LIMIT_MAX = 2700;
+    private final double ticks_in_degrees = 700/180.0;
+    private boolean isClawOpen = true;
+    private boolean previousA = false;
+
+    ///GHEARA UNGHI
+    public Servo rotatieL;
+    public boolean previousLT = false;
+    public boolean previousRT = false;
+    private double pozitieRotatieL = 0;
+    private double pozitieRotatieR = 270;
+
+    ///sasiu
+
+    private boolean isSlowMode = false;
     private DcMotor frontLeftMotor;
     private DcMotor frontRightMotor;
     private DcMotor backLeftMotor;
     private DcMotor backRightMotor;
-    private int valoare = 0;
+    public static double DEADZONE = 0.1;   // Minimum joystick input to move the motors.
+    public static double MAX_POWER = 1.0;    // Maximum motor power.
+    private Servo pozitionare;
+    double position = 0;
 
-    private boolean isSlowMode = false;
-    private boolean previousY = false;
-    private boolean previousX2 = false;
-    private boolean previousB2 = false;
-    private boolean wasRotatingRight = false;
-    private boolean wasRotatingLeft = false;
-
+    public static int target_unghi = 0;
+    public static double p_unghi = 0, i_unghi = 0, d_unghi = 0, f_unghi = 0;
 
 
     @Override
     public void init() {
-        // Initialize drive motors
+        controller_unghi = new PIDController(p_unghi, i_unghi, d_unghi);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+        gheara = hardwareMap.get(Servo.class, "wrist1");
+        gheara.setPosition(degreesToServoPositionPro(70));
+        pozitionare = hardwareMap.get(Servo.class, "wrist2");
+        pozitionare.setPosition((degreesToServoPositionPro(100)));
+///trebuiesc inversate motoarele pt brat
+        motorGlisiere = hardwareMap.get(DcMotorEx.class, "motorGlisiere");
+        motorBratDreapta = hardwareMap.get(DcMotorEx.class, "motorBratDreapta");
+        motorBratStanga = hardwareMap.get(DcMotorEx.class, "motorBratStanga");
+
+        motorGlisiere.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+
+        motorGlisiere.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorBratStanga.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        motorBratDreapta.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        motorGlisiere.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorBratDreapta.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        motorBratStanga.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
+        rotatieL = hardwareMap.get(Servo.class, "rotatie");
+
+        rotatieL.setPosition(degreesToServoPositionPro(110));
+        motorGlisiere.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         frontLeftMotor = hardwareMap.get(DcMotor.class, "leftFront");
         frontRightMotor = hardwareMap.get(DcMotor.class, "rightFront");
         backLeftMotor = hardwareMap.get(DcMotor.class, "leftBack");
         backRightMotor = hardwareMap.get(DcMotor.class, "rightBack");
 
-        frontLeftMotor.setDirection(DcMotor.Direction.FORWARD);
-        frontRightMotor.setDirection(DcMotor.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotor.Direction.FORWARD);
-        backRightMotor.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        frontRightMotor.setDirection(DcMotor.Direction.FORWARD);
+        backLeftMotor.setDirection(DcMotor.Direction.REVERSE);
+        backRightMotor.setDirection(DcMotor.Direction.FORWARD);
 
-        gheara = hardwareMap.get(Servo.class, "wrist1");
-        gheara.setPosition(degreesToServoPosition(63));
-        pozitionare = hardwareMap.get(Servo.class, "wrist2");
-        pozitionare.setPosition((degreesToServoPositionPro(132)));
-        armMotor = hardwareMap.get(DcMotor.class, "armMotor");
-        elbowMotor = hardwareMap.get(DcMotor.class, "elbowMotor");
-        elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // Asigură-te că motorul se oprește la poziția dorită
-        //armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // Asigură-te că motorul se oprește la poziția dorită
+        motorGlisiere.setDirection(DcMotor.Direction.FORWARD);
+        motorBratStanga.setDirection(DcMotor.Direction.REVERSE);
+        motorBratDreapta.setDirection(DcMotor.Direction.FORWARD);
 
-        // Setarea modului de motor
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        elbowMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-//        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        elbowMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        armMotor.setTargetPosition(0);
-        elbowMotor.setTargetPosition(0);
-
-        // Obținem numărul de "ticks" per grad pentru fiecare motor
-//        armTicksPerDegree = (int) (armMotor.getMotorType().getTicksPerRev() / 360.0);
-//        elbowTicksPerDegree = (int) (elbowMotor.getMotorType().getTicksPerRev() / 360.0);
-
-        // Modificăm direcția motorului elbow pentru a inversa mișcarea
-        armMotor.setDirection(DcMotor.Direction.FORWARD);
-        elbowMotor.setDirection(DcMotor.Direction.REVERSE); // Schimbăm direcția motorului elbow
-
-        // Inițializare poziții țintă
-        armTargetPosition = armMotor.getCurrentPosition();
-        elbowTargetPosition = elbowMotor.getCurrentPosition();
-
-        // Setare putere inițială pentru motoare
-        armMotor.setPower(0.05);
-        elbowMotor.setPower(0.05);
-
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
 
     }
 
     @Override
     public void loop() {
-        // Drive system controls
-        double drive = -gamepad1.left_stick_y;
-        double strafe = gamepad1.left_stick_x;
-        double rotate = gamepad1.right_stick_x;
-        double rotatie = gamepad2.right_stick_x;
-        double speedMultiplier = isSlowMode ? 0.55 : 0.85;
+        controller_unghi.setPID(p_unghi, i_unghi, d_unghi);
+        int unghi_pos = motorBratDreapta.getCurrentPosition();
 
-        // Mecanum drive calculations (fără field-centric)
+        double pid_unghi = controller_unghi.calculate(unghi_pos, target_unghi);
+        double ff_unghi = Math.cos(Math.toRadians(target_unghi / ticks_in_degrees)) * f_unghi;
+        double power_unghi = pid_unghi + ff_unghi;
+        motorBratDreapta.setPower(power_unghi);
+        motorBratStanga.setPower(power_unghi);
+        double joystickY = gamepad2.left_stick_y;
+        double power = joystickY;
+        double joystickY2 = gamepad2.right_trigger;
+        int arm_pos = motorBratDreapta.getCurrentPosition();
+//        if (Math.abs(arm_pos) > BRAT_LIMIT_MAX) {
+//            motorBratDreapta.setPower(0); // Oprește motorul dacă depășește limita maximă
+//            motorBratStanga.setPower(0); // Oprește motorul dacă depășește limita maximă
+//
+//        } else if (Math.abs(arm_pos) < BRAT_LIMIT_MIN) {
+//            motorGlisiere.setPower(0); // Oprește motorul dacă ajunge sub limita minimă
+//            motorBratStanga.setPower(0); // Oprește motorul dacă depășește limita maximă
+//        } else {
+//            double clippedPower2 = Range.scale(power, -1, 1, -0.8, 0.8);
+//            motorBratDreapta.setPower(clippedPower2);  // Setează puterea motorului dacă nu a atins limitele
+//            motorBratStanga.setPower(clippedPower2);  // Setează puterea motorului dacă nu a atins limitele
+//        }
+        // Check if the joystick input is within the deadzone
+
+//            if (Math.abs(power) == 0) {
+//                motorGlisiere.setPower(0);
+//            } else {
+//                double clippedPower = Range.scale(power,-1,1, -0.8, 0.8);
+//                position = position+clippedPower;
+//                int powerINT = (int) clippedPower;
+////                motorGlisiere.setPower(position);
+//                motorGlisiere.setPower(powerINT);
+//
+//            }
+        if (Math.abs(power) < DEADZONE) {
+            motorGlisiere.setPower(0);
+        } else {
+            // Clip the power to ensure it does not exceed the maximum allowed power.
+            double clippedPower = Range.clip(power, -MAX_POWER, MAX_POWER);
+            motorGlisiere.setPower(clippedPower);
+        }
+        int glisiere_pos = motorGlisiere.getCurrentPosition();
+        if (Math.abs(glisiere_pos) > GLISIERE_LIMIT_MAX) {
+            motorGlisiere.setPower(0); // Oprește motorul dacă depășește limita maximă
+        } else if (Math.abs(glisiere_pos) < GLISIERE_LIMIT_MIN) {
+            motorGlisiere.setPower(0); // Oprește motorul dacă ajunge sub limita minimă
+        } else {
+            double clippedPower = Range.scale(power, -1, 1, -0.8, 0.8);
+            motorGlisiere.setPower(clippedPower);  // Setează puterea motorului dacă nu a atins limitele
+        }
+        if(gamepad2.b){
+            setBratGlisieraPosition(200,0);
+        }
+
+        double drive = -gamepad1.left_stick_y;
+        double strafe = -gamepad1.left_stick_x;
+        double rotate = -gamepad1.right_stick_x;
+        double speedMultiplier = isSlowMode ? 0.55 : 1.0;
+
         double frontLeftPower = drive + strafe + rotate;
         double frontRightPower = drive - strafe - rotate;
         double backLeftPower = drive - strafe + rotate;
         double backRightPower = drive + strafe - rotate;
 
-        // Normalize powers to avoid exceeding max value
         double maxPower = Math.max(1.0, Math.max(Math.abs(frontLeftPower), Math.max(Math.abs(frontRightPower),
                 Math.max(Math.abs(backLeftPower), Math.abs(backRightPower)))));
 
@@ -117,234 +181,98 @@ public class TELEBELEAUA extends OpMode {
         backLeftMotor.setPower((backLeftPower / maxPower) * speedMultiplier);
         backRightMotor.setPower((backRightPower / maxPower) * speedMultiplier);
 
-        if (gamepad1.y && !previousY) {
-            isSlowMode = !isSlowMode;
-        }
-        previousY = gamepad1.y;
+        boolean currentLT = gamepad2.left_trigger > 0.5;
+        boolean currentRT = gamepad2.right_trigger > 0.5;
 
-        elbowCheckPos = elbowMotor.getCurrentPosition();
-        elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armCheckPos = armMotor.getCurrentPosition();
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        // Verificăm ce buton a fost apăsat pentru a schimba poziția țintă
-        if (gamepad2.dpad_down) {
-            // Poziția țintă pentru cot (elbow) este setată pentru 90 de grade
-            elbowMotor.setPower(0.06);
-            elbowTargetPosition = 600;  // Ajustează după necesitate 900 - poz buna
-            elbowMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            elbowMotor.setTargetPosition(elbowTargetPosition);
-            elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            check = check(elbowCheckPos, elbowTargetPosition);
-            check1 = false;
-        }
-        if (gamepad2.a) {
-            // Poziția țintă pentru cot (elbow) este setată pentru -360 de grade
-            elbowMotor.setPower(0.15);
-            elbowTargetPosition = 0;  // Ajustează după necesitate
-            elbowMotor.setTargetPosition(elbowTargetPosition);
-            check = check(elbowCheckPos, elbowTargetPosition);
-            check1 = false;
-            wrist2Angle = 132.0;
-            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
-        }
-        if (gamepad2.dpad_up) {
-            // Poziția țintă pentru cot (elbow) este setată pentru 90 de grade
-            armMotor.setPower(0.85);
-            armTargetPosition = 1299;  // Ajustează după necesitate 900 - poz buna
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            armMotor.setTargetPosition(armTargetPosition);
-            check = check(armCheckPos, armTargetPosition);
-            check1 = false;
-            elbowMotor.setPower(0.14);
-            elbowTargetPosition = 865;  // Ajustează după necesitate 900 - poz buna
-            elbowMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            elbowMotor.setTargetPosition(elbowTargetPosition);
-            check = check(elbowCheckPos, elbowTargetPosition);
-            check1 = false;
-//            if (gamepad2.right_trigger > 0.5) {
-//                double power = -gamepad2.right_trigger * 0.2; // Ajustează viteza de coborâre
-//                armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//                armMotor.setPower(power);
-//            } else {
-//                armMotor.setPower(0);
-//                armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//                armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            }
-        }
-        if (gamepad2.y) {
-            // Poziția țintă pentru cot (elbow) este setată pentru 90 de grade
-            armMotor.setPower(0.3);
-            elbowMotor.setPower(0.20);
-            armTargetPosition = 0;  // Ajustează după necesitate 900 - poz buna
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            armMotor.setTargetPosition(armTargetPosition);
-            check = check(armCheckPos, armTargetPosition);
-            check1 = false;
-            elbowTargetPosition = 0;  // Ajustează după necesitate 900 - poz buna
-            elbowMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            elbowMotor.setTargetPosition(elbowTargetPosition);
-            check = check(elbowCheckPos, elbowTargetPosition);
-            check1 = false;
-        }
-
-/*
-        if(gamepad2.dpad_up){
-            armMotor.setPower(0.2);
-            armTargetPosition = 90;
-            armMotor.setTargetPosition(armTargetPosition);
-        }
-
-        if(Math.abs(armTargetPosition - armMotor.getCurrentPosition()) < 10){
-            armMotor.setPower(0.05);
-        }
-*/
-
-//        if (gamepad2.right_bumper && !previousX2) {
-//            wrist2Angle += 30.0; // Crește unghiul cu 30 de grade
-//            if (wrist2Angle > 225.0) wrist2Angle = 225.0; // Limitează la 225 de grade
-//            pozitionare.setPosition(degreesToServoPositionPro(wrist2Angle));
-//        }
-//        previousX2 = gamepad2.right_bumper;
+//        if (currentLT && !previousLT) {
+//            pozitieRotatieL += 90;
+//            pozitieRotatieR -= 90;
 //
-//        if (gamepad2.left_bumper && !previousB2) {
-//            wrist2Angle -= 30.0;
-//            if (wrist2Angle < 0) wrist2Angle = 0;
-//            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
+//            if (pozitieRotatieL > 180 && pozitieRotatieR < 90) {
+//                pozitieRotatieL = 270;
+//                pozitieRotatieR = 0;
+//            }
+//
+//            rotatieL.setPosition(degreesToServoPositionPro(pozitieRotatieL));
 //        }
-//        previousB2 = gamepad2.left_bumper;
-        if (rotatie >= 0.4 && !wasRotatingRight) {
-            wrist2Angle += 30;
-            if (wrist2Angle > 225.0) wrist2Angle = 225.0;
-            pozitionare.setPosition(degreesToServoPositionPro(wrist2Angle));
-            wasRotatingRight = true; // Marchează că joystick-ul este în poziție de rotație dreapta
-        }
-        if (rotatie < 0.4) {
-            wasRotatingRight = false; // Reset la revenirea joystick-ului
-        }
-
-        if (rotatie <= -0.4 && !wasRotatingLeft) {
-            wrist2Angle -= 30;
-            if (wrist2Angle < 0) wrist2Angle = 0;
-            pozitionare.setPosition(degreesToServoPositionPro(wrist2Angle));
-            wasRotatingLeft = true; // Marchează că joystick-ul este în poziție de rotație stânga
-        }
-        if (rotatie > -0.4) {
-            wasRotatingLeft = false; // Reset la revenirea joystick-ului
-        }
-
-        if (gamepad2.b) {
-            wrist2Angle = 132.0;
-            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
-
-        }
-
-        if (gamepad2.x) {
-            armMotor.setPower(1.0);
-            armTargetPosition = 1000;  // Ajustează după necesitate 900 - poz buna
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            armMotor.setTargetPosition(armTargetPosition);
-            check = check(armCheckPos, armTargetPosition);
-            check1 = false;
-            //elbowMotor.setPower(0.15);
-            elbowTargetPosition = 166;  // Ajustează după necesitate 900 - poz buna
-            elbowMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            elbowMotor.setTargetPosition(elbowTargetPosition);
-            check = check(elbowCheckPos, elbowTargetPosition);
-            check1 = false;
-            wrist2Angle = 132.0;
-            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
-        }
-
-
-        if(check) {
-            if (elbowCheckPos <= elbowTargetPosition) {
-                if(elbowCheckPos>70){
-                    elbowMotor.setPower(0.015);
-                }
-                else{
-                    elbowMotor.setPower(0.02);
-                }
-                check1 = true;
-            }
-        } else if (!check) {
-            if (elbowCheckPos >= elbowTargetPosition) {
-                if(elbowCheckPos>70){
-                    elbowMotor.setPower(0.015);
-                }
-                else{
-                    elbowMotor.setPower(0.017);
-                }
-                check1 = true;
-            }
-        }
-
-        if(check1){
-            elbowMotor.setPower(delayTranzitie);
-            if(delayTranzitie>0.01) delayTranzitie -= 0.005;
-/*
-            if(delayTranzitie>0){
-                elbowTargetPosition=0;
-                elbowMotor.setTargetPosition(elbowTargetPosition);
-                elbowMotor.setPower(1);
-                delayTranzitie -= 0.01;
-            }else{
-                elbowMotor.setPower(0.1);
-                elbowTargetPosition = elbowMotor.getCurrentPosition();
-                elbowMotor.setTargetPosition(elbowTargetPosition);
-            }*/
-        }
-
+//
+//        if (currentRT && !previousRT) {
+//            pozitieRotatieL -= 90;
+//            pozitieRotatieR += 90;
+//
+//            if (pozitieRotatieL < 90 && pozitieRotatieR > 180) {
+//                pozitieRotatieL = 0;
+//                pozitieRotatieR = 270;
+//            }
+//
+//            rotatieL.setPosition(degreesToServoPositionPro(pozitieRotatieL));
+//        }
         if (gamepad1.a && !previousA) {
             isClawOpen = !isClawOpen;
         }
-
+        if (isClawOpen) {
+            gheara.setPosition(degreesToServoPositionPro(0)); // Deschide gheara
+        } else {
+            gheara.setPosition(degreesToServoPositionPro(70)); // Închide gheara
+        }
         previousA = gamepad1.a;
 
-        if (isClawOpen) {
-            gheara.setPosition(degreesToServoPosition(0));
-        } else {
-            gheara.setPosition(degreesToServoPosition(60));
+        if (gamepad2.right_bumper && !previousX2) {
+            wrist2Angle += 30.0;
+            if (wrist2Angle > 225.0) wrist2Angle = 225.0;
+            pozitionare.setPosition(degreesToServoPositionPro(wrist2Angle));
         }
+        previousX2 = gamepad2.right_bumper;
 
-        // Telemetry
-        telemetry.addData("Front Left Power", frontLeftMotor.getPower());
-        telemetry.addData("Front Right Power", frontRightMotor.getPower());
-        telemetry.addData("Back Left Power", backLeftMotor.getPower());
-        telemetry.addData("Back Right Power", backRightMotor.getPower());
-        telemetry.addData("Slow Mode Active", isSlowMode);
-        telemetry.addData("Arm Target Position (ticks)", armTargetPosition);
-        telemetry.addData("Elbow Target Position (ticks)", elbowTargetPosition);
-        telemetry.addData("Arm Current Position (ticks)", armMotor.getCurrentPosition());
-        telemetry.addData("Elbow Current Position (ticks)", elbowMotor.getCurrentPosition());
-        telemetry.addData("Motor Ticks/Rev ", armMotor.getMotorType().getTicksPerRev());
-        telemetry.addData("Check :", check);
-        telemetry.addData("Check1", check1);
-        telemetry.addData("Tranzitie :", delayTranzitie);
-        telemetry.addData("Servo Position", gheara.getPosition());
-        telemetry.addData("Servo Position 2", isClawOpen);
-        telemetry.addData("pozitie servo 2:", pozitionare.getPosition());
-        telemetry.addData("Button A Pressed", gamepad2.a);
-        telemetry.addData("Servo Target Value", valoare);
+        if (gamepad2.left_bumper && !previousB2) {
+            wrist2Angle -= 30.0;
+            if (wrist2Angle < 0) wrist2Angle = 0;
+            pozitionare.setPosition((degreesToServoPositionPro(wrist2Angle)));
+        }
+        previousB2 = gamepad2.left_bumper;
+
+        previousLT = currentLT;
+        previousRT = currentRT;
+        telemetry.addData("Joystick Y", joystickY);
+        telemetry.addData("Motor Power", motorGlisiere.getPower());
+        telemetry.addData("pos" ,unghi_pos);
+        telemetry.addData("target", target_unghi);
         telemetry.update();
+
+
     }
 
-    private boolean check(int currentPos, int targetPos){
-        if (currentPos > targetPos) return true;
-        else return false;
-    }
-    private double degreesToServoPosition(double degrees) {
-        double minDegrees = 0.0;
-        double maxDegrees = 180.0;
-        return (degrees - minDegrees) / (maxDegrees - minDegrees);
+    //    private void setBratGlisieraPosition(int unghi, int glisiere){
+//        position=glisiere;
+//        motorBratDreapta.setTargetPosition(unghi);
+//        motorBratStanga.setTargetPosition(unghi);
+//
+//        motorBratDreapta.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        motorBratStanga.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//
+//        motorBratDreapta.setPower(0.5); // Ajustează viteza după nevoie
+//        motorBratStanga.setPower(0.5);
+//    }
+    private void setBratGlisieraPosition(int unghi, int glisiere){
+        motorGlisiere.setTargetPosition(glisiere);
+        motorGlisiere.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorGlisiere.setPower(0.8); // Ajustează viteza după nevoie
+
+        // Setăm poziția brațului
+        motorBratDreapta.setTargetPosition(unghi);
+        motorBratStanga.setTargetPosition(unghi);
+
+        motorBratDreapta.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorBratStanga.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+
     }
     private double degreesToServoPositionPro(double degrees) {
         double minDegrees = 0.0;
         double maxDegrees = 270.0;
         return (degrees - minDegrees) / (maxDegrees - minDegrees);
     }
+
+
 }

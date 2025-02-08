@@ -12,7 +12,7 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 @Config
-@TeleOp(name = "IMIBAGTOATAPULA", group = "Robo")
+@TeleOp(name = "ROBOT_FINAL", group = "Robo")
 public class imibagpula extends OpMode {
     // Mecanum drive motors
     private Servo gheara;
@@ -52,7 +52,7 @@ public class imibagpula extends OpMode {
     private final double ticks_in_degrees = 1440 / 80;
     public static double p1 = 0.029, i1 = 0.0013, d1 = 0.0045; // 0.04 0.015 0.005
     public static double f1 = 0.1;
-    public static double p2 = 0.1, i2 = 0.03, d2 = 0.0011; // 0.6
+    public static double p2 = 0.095, i2 = 0.03, d2 = 0.0011; // 0.6 apoi 0.1
     public static double f2 = 0.18; // 16
     public static double p3 = 0.08, i3 = 0.03, d3 = 0.0011;
     public static double f3 = 0.16;
@@ -156,33 +156,27 @@ public class imibagpula extends OpMode {
 
         if (gamepad2.dpad_down) {
             target2 = 0;
-            target = 460;
+            target = 370;
             pula = true;
         }
         if (gamepad2.dpad_up) {
-            target = 680;
-            target2 = 1600;
+            target = 590;
+            target2 = 770;
             pula = true;
-            pozitionare.setPosition(degreesToServoPositionPro(222));
+//            pozitionare.setPosition(degreesToServoPositionPro(222));
         }
         ///Ma doare in pula ( IANNIS 29/1/2025 ora 3:18 PM )
         if (gamepad2.dpad_right) {
-            target = 485;
-            target2 = 950;
+            target = 455;
+            target2 = 600;
             pula = true;
         }
-        if (gamepad2.y) {
-            target = 600;
-            pula = true;
+        if (gamepad2.dpad_left) {
+            target  = 400;
         }
-//        if (dpadLeftPressed) {
-//            armMotor.setPower(power3);
-//            if (Math.abs(armMotor.getCurrentPosition() - target3) < 10) {
-//                dpadLeftPressed = false;
-//            }
-//        } else {
-//            armMotor.setPower(power2);
-//        }
+        if (gamepad2.dpad_left) {
+            target2 = 500;
+        }
         if (gamepad2.a) {
             pula = false;
             double elbowError = Math.abs(elbowMotor.getCurrentPosition() - target);
@@ -215,6 +209,12 @@ public class imibagpula extends OpMode {
         }
         if (gamepad1.left_trigger > 0.2) {
             target = target - 5;
+        }
+        if (gamepad2.right_trigger > 0.2) {
+            target2 = target2 + 5;
+        }
+        if (gamepad2.left_trigger > 0.2) {
+            target2 = target2 - 5;
         }
         elbowCheckPos = elbowMotor.getCurrentPosition();
         elbowMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -252,15 +252,15 @@ public class imibagpula extends OpMode {
             gheara.setPosition(degreesToServoPosition(65));
         }
 
-//        telemetry.addData("posArm", armMotor.getCurrentPosition());
-//        telemetry.addData("target", target2);
-//        telemetry.addData("posElbow", elbowMotor.getCurrentPosition());
-//        telemetry.addData("target2", target);
-//        telemetry.addData("pula", pula);
-//        telemetry.addData("putere", speedMultiplier);
-        telemetry.addData("putere", power3);
-        telemetry.addData("pozitie", armMotor.getCurrentPosition());
-        telemetry.addData("tinta", target3);
+        telemetry.addData("posArm", armMotor.getCurrentPosition());
+        telemetry.addData("target", target2);
+        telemetry.addData("posElbow", elbowMotor.getCurrentPosition());
+        telemetry.addData("target2", target);
+        telemetry.addData("pula", pula);
+        telemetry.addData("putere", speedMultiplier);
+//        telemetry.addData("putere", power3);
+//        telemetry.addData("pozitie", armMotor.getCurrentPosition());
+//        telemetry.addData("tinta", target3);
         telemetry.update();
     }
 

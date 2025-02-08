@@ -233,7 +233,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@Autonomous(name = "AUTO_COS_PULA", group = "Autonomie")
+@Autonomous(name = "AUTO_COS", group = "Autonomie")
 public class autoParcare extends LinearOpMode {
 
     private Servo gheara;
@@ -297,14 +297,14 @@ public class autoParcare extends LinearOpMode {
             strafeLeftForTime(1.2);
             strafeRightForTime(0.8);
             moveForwardForTime(2.75);
-            strafeLeftForTime(0.75);
+            strafeLeftForTime(0.55);
             moveBackwardForTime(2.9);
             moveForwardForTime(2.5);
             strafeLeftForTime(0.87);
-            moveBackwardForTime(2.6);
-            moveForwardForTime(2.4);
-            strafeLeftForTime(0.6);
-            moveBackwardForTime(2.45);
+            moveBackwardForTime(2.4);
+            moveForwardForTime(2.0);
+            strafeLeftForTime(0.9);
+            moveBackwardForTime(2.05);
         }
     }
 

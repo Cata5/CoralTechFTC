@@ -37,7 +37,7 @@ public class COD_FINAL_28260 extends OpMode {
     public static double p_glisiere = 0, i_glisiere = 0, d_glisiere = 0, f_glisiere = 0;
 
     ///GHEARA UNGHI
-    public Servo rotatieL, rotatieR;
+    public Servo rotatieL;
     public boolean previousLT = false;
     public boolean previousRT = false;
     private double pozitieRotatieL = 0;
@@ -72,10 +72,8 @@ public class COD_FINAL_28260 extends OpMode {
         motorBratDreapta.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
         rotatieL = hardwareMap.get(Servo.class, "rotatieL");
-        rotatieR = hardwareMap.get(Servo.class, "rotatieR");
 
         rotatieL.setPosition(degreesToServoPositionPro(0));
-        rotatieR.setPosition(degreesToServoPositionPro(270));
 
         frontLeftMotor = hardwareMap.get(DcMotor.class, "leftFront");
         frontRightMotor = hardwareMap.get(DcMotor.class, "rightFront");
@@ -138,11 +136,6 @@ public class COD_FINAL_28260 extends OpMode {
             target_glisiere = Math.max(GLISIERE_LIMIT_MIN, Math.min(target_glisiere, GLISIERE_LIMIT_MAX));
         }
 
-        double touchpadInputBrat = gamepad2.touchpad_finger_2_y;
-        if (Math.abs(touchpadInputBrat) > 0.1) {
-            target_unghi += touchpadInputBrat * 10;
-            target_unghi = Math.max(BRAT_LIMIT_MIN, Math.min(target_unghi, BRAT_LIMIT_MAX));
-        }
         boolean currentLT = gamepad2.left_trigger > 0.5;
         boolean currentRT = gamepad2.right_trigger > 0.5;
 
@@ -156,7 +149,6 @@ public class COD_FINAL_28260 extends OpMode {
             }
 
             rotatieL.setPosition(degreesToServoPositionPro(pozitieRotatieL));
-            rotatieR.setPosition(degreesToServoPositionPro(pozitieRotatieR));
         }
 
         if (currentRT && !previousRT) {
@@ -169,7 +161,6 @@ public class COD_FINAL_28260 extends OpMode {
             }
 
             rotatieL.setPosition(degreesToServoPositionPro(pozitieRotatieL));
-            rotatieR.setPosition(degreesToServoPositionPro(pozitieRotatieR));
         }
 
         previousLT = currentLT;
